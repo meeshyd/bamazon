@@ -15,6 +15,7 @@ var connection = mysql.createConnection({
 });
 
 function showInventory() {
+	console.log("\n---------------------\nMEESHYD'S SUPERSTORE\n---------------------\n")
 	connection.query("SELECT * FROM products", function(err, res) {
     	if (err) throw err;
     	console.table(res);
@@ -23,8 +24,7 @@ function showInventory() {
 };
 
 function storeOptions() {
-	// The first should ask them the ID of the product they would like to buy.
-	// The second message should ask how many units of the product they would like to buy.
+
 	inquirer.prompt([{
     	name: "id",
     	type: "input",
@@ -40,13 +40,25 @@ function storeOptions() {
 		const queryStr = "SELECT * FROM products WHERE ?";
 
 		connection.query(queryStr, {item_id: answer.id} , function(err, res) {
-			
+			let result = res[0];
+
 			if (err) throw err;
 			
-			if (answer.quantity <= res[0].stock_quantity){
-			    //TODO
-			    // This means updating the SQL database to reflect the remaining quantity.
-				// Once the update goes through, show the customer the total cost of their purchase.
+			if (answer.quantity <= result.stock_quantity){
+				connection.query("UPDATE products SET ? WHERE ?", [{
+  					stock_quantity: result.stock_quantity - answer.quantity
+					}, {
+					item_id: answer.id
+					}], function(err, res) {
+						if (err) throw err;
+					});
+				
+				console.log("\n\nYou total cost: $"+
+					result.price * answer.quantity + "."+
+					"\nThank you for your purchase!\n");
+
+				stayOrLeave();
+
 			} else {
 			    console.log("Sorry, there is not enough in stock!\nPlease try again with a valid quantity.")
 			    storeOptions();
@@ -56,4 +68,19 @@ function storeOptions() {
 	});
 };
 
+function stayOrLeave (){
+	inquirer.prompt([{
+    	name: "stayOrLeave",
+    	type: "list",
+    	message: "What would you like to do?",
+    	choices: ["Keep shopping", "Leave MeeshyD's Superstore"]
+	}]).then(function(answer) {
+		if (answer.stayOrLeave==="Keep shopping"){
+			showInventory();
+		}else{
+			console.log("\n\nThank you for visiting. Please come back soon!\n\n")
+			process.exit()
+		};
+	});
+};
 showInventory();
