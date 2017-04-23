@@ -2,7 +2,7 @@ const mysql = require("mysql");
 const inquirer = require("inquirer");
 require('console.table');
 
-var connection = mysql.createConnection({
+const connection = mysql.createConnection({
   host: "localhost",
   port: 3306,
 
@@ -19,11 +19,11 @@ function showInventory() {
 	connection.query("SELECT * FROM products", function(err, res) {
     	if (err) throw err;
     	console.table(res);
-    	storeOptions();
+    	customerOptions();
 	});
 };
 
-function storeOptions() {
+function customerOptions() {
 
 	inquirer.prompt([{
     	name: "id",
@@ -37,9 +37,7 @@ function storeOptions() {
 		
 	}]).then(function(answer) {
 
-		const queryStr = "SELECT * FROM products WHERE ?";
-
-		connection.query(queryStr, {item_id: answer.id} , function(err, res) {
+		connection.query("SELECT * FROM products WHERE ?", {item_id: answer.id} , function(err, res) {
 			let result = res[0];
 
 			if (err) throw err;
@@ -60,8 +58,8 @@ function storeOptions() {
 				stayOrLeave();
 
 			} else {
-			    console.log("Sorry, there is not enough in stock!\nPlease try again with a valid quantity.")
-			    storeOptions();
+			    console.log("Sorry, there is not enough in stock!\nPlease try again with a valid quantity.");
+			    customerOptions();
 			};
 		});
 
@@ -69,12 +67,12 @@ function storeOptions() {
 };
 
 function stayOrLeave (){
-	inquirer.prompt([{
+	inquirer.prompt({
     	name: "stayOrLeave",
     	type: "list",
-    	message: "What would you like to do?",
+    	message: "What would you like to do now?",
     	choices: ["Keep shopping", "Leave MeeshyD's Superstore"]
-	}]).then(function(answer) {
+	}).then(function(answer) {
 		if (answer.stayOrLeave==="Keep shopping"){
 			showInventory();
 		}else{
