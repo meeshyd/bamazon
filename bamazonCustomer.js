@@ -28,39 +28,56 @@ function customerOptions() {
 	inquirer.prompt([{
     	name: "id",
     	type: "input",
-    	message: "What is the ID of the item you would like to buy?"
-    	}, 
-    	{
+    	message: "What is ID number of the item you would like to purchase?",
+    	validate: function(value) {
+	      if (isNaN(value) === false) {
+	        return true;
+	      }
+	      return false;
+	    }
+    }, 
+    {
 		name: "quantity",
 		type: "input",
-		message: "How many would you like to buy?"
+		message: "How many would you like to buy?",
+		validate: function(value) {
+	      if (isNaN(value) === false) {
+	        return true;
+	      }
+	      return false;
+	    }
 		
 	}]).then(function(answer) {
 
 		connection.query("SELECT * FROM products WHERE ?", {item_id: answer.id} , function(err, res) {
 			let result = res[0];
 
-			if (err) throw err;
-			
-			if (answer.quantity <= result.stock_quantity){
-				connection.query("UPDATE products SET ? WHERE ?", [{
-  					stock_quantity: result.stock_quantity - answer.quantity
-					}, {
-					item_id: answer.id
-					}], function(err, res) {
-						if (err) throw err;
-					});
-				
-				console.log("\n\nYou total cost: $"+
-					result.price * answer.quantity + "."+
-					"\nThank you for your purchase!\n");
-
-				stayOrLeave();
-
+			if (err) {
+				console.log("Error retrieving data or invalid entry. Please try again.");
+				customerOptions();
 			} else {
-			    console.log("Sorry, there is not enough in stock!\nPlease try again with a valid quantity.");
-			    customerOptions();
+			
+				if (answer.quantity <= result.stock_quantity){
+					let newQuantity = parseInt(result.stock_quantity) - parseInt(answer.quantity);
+					connection.query("UPDATE products SET ? WHERE ?", [{
+	  					stock_quantity: newQuantity
+						}, {
+						item_id: answer.id
+						}], function(err, res) {
+							if (err) throw err;
+						});
+					let total = result.price * parseInt(answer.quantity)
+					console.log("\n\nYou total cost: $"+ total +
+						"\nThank you for your purchase!\n");
+
+					stayOrLeave();
+
+				} else {
+				    console.log("Sorry, there is not enough in stock!\nPlease try again with a valid quantity.");
+				    customerOptions();
+				};
 			};
+
 		});
 
 	});

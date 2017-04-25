@@ -20,7 +20,7 @@ const connection = mysql.createConnection({
 // If a manager selects Add New Product, it should allow the manager to add a completely new product to the store.
 
 function showInventory() {
-	console.log("\n--------------\nFULL INVENTORY\n--------------\n")
+	console.log("---------------------------\nMEESHYD'S MANAGEMENT PORTAL\n---------------------------\nFULL INVENTORY\n---------------------------\n");
 	connection.query("SELECT * FROM products", function(err, res) {
     	if (err) throw err;
     	console.table(res);
@@ -28,8 +28,9 @@ function showInventory() {
 	});
 };
 
+
+
 function managerOptions() {
-	console.log("\n---------------------------\nMEESHYD'S MANAGEMENT PORTAL\n---------------------------\n")
 	inquirer.prompt({
     	name: "options",
     	type: "list",
@@ -68,17 +69,114 @@ function managerOptions() {
 function showLowInventory(){
 	const query = "SELECT * FROM products WHERE stock_quantity<5";
     connection.query(query, function(err, res) {
-      console.log("\n-------------\nLOW INVENTORY\n-------------\n")
-      console.table(res)
-      managerOptions();
+       	if (err) {
+	      	console.log("Error retrieving inventory. Please try again.");
+	      	managerOptions();
+	    } else {
+	    	console.log("\n-------------\nLOW INVENTORY\n-------------\n")
+	    	console.table(res)
+	    	managerOptions();
+    	};
     });
-}
+};
+
 function addInventory(){
-	console.log("add inventory function goes here");
-	managerOptions();
-}
+	inquirer.prompt([{
+    	name: "id",
+    	type: "input",
+    	message: "Enter item ID:",
+    	validate: function(value) {
+	      if (isNaN(value) === false) {
+	        return true;
+	      }
+	      return false;
+	    }
+    }, 
+    {
+		name: "quantity",
+		type: "input",
+		message: "Enter number of additional inventory:",
+		validate: function(value) {
+	      if (isNaN(value) === false) {
+	        return true;
+	      }
+	      return false;
+	    }
+		
+	}]).then(function(answer) {
+		connection.query("SELECT * FROM products WHERE ?", {item_id: answer.id} , function(err, res) {
+			let result = res[0];
+
+			if (err) {
+				console.log("Error retrieving data or invalid entry. Please try again.");
+				addInventory();
+			} else {
+				let newQuantity = parseInt(answer.quantity) + result.stock_quantity;
+				connection.query("UPDATE products SET ? WHERE ?", [{
+	  				stock_quantity: newQuantity
+					}, {
+					item_id: answer.id
+				}], function(err, res) {
+					if (err) throw err;
+				});
+				console.log("\nInventory was updated successfully!")
+				showInventory();
+			};
+		});		
+	});
+};
+
 function addNewProduct(){
-	console.log("add new product function goes here");
-	managerOptions();
-}
-managerOptions();
+	inquirer.prompt([{
+	    name: "product",
+	    type: "input",
+	    message: "Enter a product name:"
+	  }, {
+	    name: "department",
+	    type: "list",
+	    message: "Select a Department:",
+	    choices: ["Fun","Cute","Yummy","Necessities"]
+	  }, {
+	    name: "price",
+	    type: "input",
+	    message: "Enter price:",
+	    validate: function(value) {
+	      if (isNaN(value) === false) {
+	        return true;
+	      }
+	      return false;
+	    }
+	  }, {
+	  	name: "quantity",
+	    type: "input",
+	    message: "Enter quantity:",
+	    validate: function(value) {
+	      if (isNaN(value) === false) {
+	        return true;
+	      }
+	      return false;
+	    }
+	  }]).then(function(answer) {
+
+	    connection.query("INSERT INTO products SET ?", {
+	      product_name: answer.product,
+	      department_name: answer.department,
+	      price: answer.price,
+	      stock_quantity: answer.quantity
+	    }, function(err) {
+	      if (err) {
+	      	console.log("Error retrieving data or invalid entry. Please try again.")
+	      	addNewProduct();
+	      } else {
+	      	console.log("\nNew product was added successfully!");
+	    	showInventory();
+	      };
+	    
+	    });
+	});
+};
+showInventory();
+
+
+
+
