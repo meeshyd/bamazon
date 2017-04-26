@@ -1,24 +1,13 @@
+//requiring npm packages needed for app
 const mysql = require("mysql");
 const inquirer = require("inquirer");
 require('console.table');
 
-const connection = mysql.createConnection({
-  host: "localhost",
-  port: 3306,
+//require MySQL configuration object and create connection
+const config = require('./config.js');
+const connection = mysql.createConnection(config);
 
-  // Your username
-  user: "root",
-
-  // Your password
-  password: "",
-  database: "bamazon"
-
-});
-// If a manager selects View Products for Sale, the app should list every available item: the item IDs, names, prices, and quantities.
-// If a manager selects View Low Inventory, then it should list all items with a inventory count lower than five.
-// If a manager selects Add to Inventory, your app should display a prompt that will let the manager "add more" of any item currently in the store.
-// If a manager selects Add New Product, it should allow the manager to add a completely new product to the store.
-
+//show inventory displays the full store inventory to customer and also calls the managerOptions funtion
 function showInventory() {
 	console.log("---------------------------\nMEESHYD'S MANAGEMENT PORTAL\n---------------------------\nFULL INVENTORY\n---------------------------\n");
 	connection.query("SELECT * FROM products", function(err, res) {
@@ -27,9 +16,8 @@ function showInventory() {
     	managerOptions();
 	});
 };
-
-
-
+//managerOptions presents user with list of available actions using the inquirer package.
+//based on the user selection, a switch function then executes the appropriate function
 function managerOptions() {
 	inquirer.prompt({
     	name: "options",
@@ -65,9 +53,11 @@ function managerOptions() {
 		}
 	});
 };
-
+//showLowInventory displays items from products table in bamazon database
+//that have a stock quantity < 5.
 function showLowInventory(){
 	const query = "SELECT * FROM products WHERE stock_quantity<5";
+
     connection.query(query, function(err, res) {
        	if (err) {
 	      	console.log("Error retrieving inventory. Please try again.");
@@ -79,7 +69,8 @@ function showLowInventory(){
     	};
     });
 };
-
+//addInventory uses inquirer to obtain item ID and quantity from user
+// and updates the products table in the bamazon database with new stock
 function addInventory(){
 	inquirer.prompt([{
     	name: "id",
@@ -104,12 +95,14 @@ function addInventory(){
 	    }
 		
 	}]).then(function(answer) {
+		//then use a SQL query to find item in products table
 		connection.query("SELECT * FROM products WHERE ?", {item_id: answer.id} , function(err, res) {
 			let result = res[0];
-
+			//if error, log to console and call function again to start over
 			if (err) {
 				console.log("Error retrieving data or invalid entry. Please try again.");
 				addInventory();
+			//if item is found, update item in table with new quantity
 			} else {
 				let newQuantity = parseInt(answer.quantity) + result.stock_quantity;
 				connection.query("UPDATE products SET ? WHERE ?", [{
@@ -119,13 +112,15 @@ function addInventory(){
 				}], function(err, res) {
 					if (err) throw err;
 				});
+				//log success message to console and call showInventory to return to original options
 				console.log("\nInventory was updated successfully!")
 				showInventory();
 			};
 		});		
 	});
 };
-
+//addNewProduct uses inquirer to obtain new product information
+//and adds the new product to the products table in bamazon database
 function addNewProduct(){
 	inquirer.prompt([{
 	    name: "product",
@@ -157,16 +152,18 @@ function addNewProduct(){
 	      return false;
 	    }
 	  }]).then(function(answer) {
-
+	  	//using SQL to add new item to the products table using the information obtained with inquirer
 	    connection.query("INSERT INTO products SET ?", {
 	      product_name: answer.product,
 	      department_name: answer.department,
 	      price: answer.price,
 	      stock_quantity: answer.quantity
 	    }, function(err) {
+	     //if error, log to console and call function again to start over
 	      if (err) {
 	      	console.log("Error retrieving data or invalid entry. Please try again.")
 	      	addNewProduct();
+	     //log success message to console and call showInventory to return to original options
 	      } else {
 	      	console.log("\nNew product was added successfully!");
 	    	showInventory();
