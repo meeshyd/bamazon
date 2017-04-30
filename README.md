@@ -20,7 +20,6 @@ module.exports = {
 ### Customer Portal
 
 The Bamazon Customer Portal allows users to view the current items available for purchase. The user will be prompted to enter the item id# and how many items they wish to purchase. If the item is in stock, the order will be completed and the user will see the total amount of their purchase.
-
 ![picture alt](images/bamazon-customer.png "Customer View")
 
 ### Manager Portal
@@ -31,7 +30,6 @@ The Bamazon Customer Portal allows users to view and edit the inventory of the s
 * View low inventory
 * Add to inventory
 * Add a new product
-
 ![picture alt](images/bamazon-manager.png "Manager View")
 
 ## Technologies Used:
